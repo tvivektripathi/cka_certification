@@ -255,7 +255,7 @@
    <summary> Create deployment using imperative command </summary>
 
    ```
-   kubectl deployment  pod redis --image=redis/redis-image --replicas=3
+   kubectl create deployment  pod redis --image=redis/redis-image --replicas=3
    ```
    </details> 
 1. <details>
@@ -556,7 +556,7 @@
 1. <details>
    <summary>Create Service</summary>
     Create service named redis-service of type ClusterIP exposed on 6379
-    
+
    ```
    $ kubectl expose pod redis --port=6379 --name redis-service --dry-run=client -o yaml
    ```
@@ -567,3 +567,183 @@
    kubectl create service clusterip redis-service --tcp=6379:6379 --dry-run=client -o yaml
    ```
    </details>
+1. <details>
+   <summary>Get all object in a cluster in production (prod) environment.</summary>
+
+   ```
+   $ kubectl get all --selector env=prod 
+   ```
+   </details>
+1. <details>
+   <summary>List all the pods which are/is part of the prod environment, the finance BU and of frontend tier</summary>
+
+   ```
+   $ kubectl get all --selector  env=prod,bu=finance,tier=frontend
+   ```
+   </details>
+1. <details>
+   <summary>Taints and Tolerance</summary>
+    Taints are applied on Nodes and Tolerance are pod.
+
+   ```
+   $ kubectl taint nodes <node-name> key=vale:taint-effect
+   ```
+   <b>taint-effect</b>
+
+    a. <b>NoSchedule:</b> Pods that do not tolerate the taint will not be scheduled on the node.
+
+    b. <b>PreferNoSchedule:</b> Scheduler will try to avoid placing pods that do not tolerate the taint but is not guaranteed.
+
+    c. <b>NoExecute:</b> Existing pods on the node that do not tolerate the taint will be evicted.
+
+    ```
+    $ kubectl taint nodes node1 app=blue:NoSchedule
+    ```
+
+   </details>
+1. <details>
+   <summary>To see this taint.</summary>
+
+   ```
+   $ kubectl describe node kubemaster |grep Taint
+   ```
+   </details>
+1. <details>
+   <summary>To get the detail pod information (using wide).</summary>
+
+   ```
+   $ kubectl get po --all-namespaces -o wide 
+   ```
+
+   ![pod-wide](../images/pod-wide.png)
+   </details>
+
+1.  <details>
+    <summary>How many Labels exist on node node01?</summary>
+
+    ```
+    kubectl describe node node01
+    ```
+
+    Look under `Labels` section
+
+    --- OR ---
+
+    ```
+    kubectl get node node01 --show-labels
+    ```
+
+    </details>
+
+1.  <details>
+    <summary>What is the value set to the label key beta.kubernetes.io/arch on node01?</summary>
+
+    From the output of Q1, find the answer there.
+    </details>
+
+1.  <details>
+    <summary>Apply a label color=blue to node node01</summary>
+
+    ```
+    kubectl label node node01 color=blue
+    ```
+    </details>
+
+1.  <details>
+    <summary>Create a new deployment named blue with the nginx image and 3 replicas.</summary>
+
+    ```
+    kubectl create deployment blue --image=nginx --replicas=3
+    ```
+    </details>
+
+1.  <details>
+    <summary>Which nodes can the pods for the blue deployment be placed on?</summary>
+
+
+    Check if master and node01 have any taints on them that will prevent the pods to be scheduled on them. If there are no taints, the pods can be scheduled on either node.
+
+    ```
+    kubectl describe nodes controlplane | grep -i taints
+    kubectl describe nodes node01 | grep -i taints
+    ```
+    </details>
+
+1.  <details>
+    <summary>Set Node Affinity to the deployment to place the pods on node01 only.</summary>
+    Now we edit in place the deployment we created earlier. Remember that we labelled `node01` with `color=blue`? Now we are going to create an affinity to that label, which will "attract" the pods of the deployment to it.
+
+    1.
+        ```
+        $ kubectl edit deployment blue
+        ```
+    1. Add the YAML below under the template.spec section, i.e. at the same level as `containers` as it is a POD setting. The affinity will be considered only during scheduling stage, however this edit will cause the deployment to roll out again.
+
+      ```yaml
+        affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+              - matchExpressions:
+                - key: color
+                  operator: In
+                  values:
+                  - blue
+      ```
+    </details>
+
+1. <details>
+    <summary>Which nodes are the pods placed on now?</summary>
+
+    ```
+    $ kubectl get pods -o wide
+    ```
+    </details>
+
+1.  <details>
+    <summary>Create a new deployment named red with the nginx image and 2 replicas, and ensure it gets placed on the controlplane node only.</summary>
+
+    1. Create a YAML template for the deploymemt
+
+        ```
+        kubectl create deployment red --image nginx --replicas 2 --dry-run=client -o yaml > red.yaml
+        ```
+    1. Edit the file
+        ```
+        vi red.yaml
+        ```
+    1.  Add the toleration using the label stated in the question, and placing it as before for the `blue` deployment
+      ```yaml
+        affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+              - matchExpressions:
+                - key: node-role.kubernetes.io/master
+                  operator: Exists
+      ```
+    1. Save, exit and create the deployment
+      ```
+      kubectl create -f red.yaml
+      ```
+    1. Check the result
+      ```
+      $ kubectl get pods -o wide
+      ```
+    </details>
+1. <details>
+    <summary>To get a daemonsets</summary>
+
+    ```
+    $ kubectl get daemonsets
+    ```
+    </details>
+1. <details>
+    <summary>To get the detail of a daemonsets</summary>
+
+    ```
+    $ kubectl describe daemonsets <<name-daemonsets>>
+    ```
+    </details>
+
+
