@@ -68,6 +68,13 @@
          ```
    </details>
 1. <details>
+    <summary>Recreate a pod using updated definition file - kubectl replace option</summary>
+
+    ```
+    $ kubectl replace --force -f <<updated pod definition file>>
+    ```
+    </details>
+1. <details>
    <summary> Extract a pod definition</summary>
 
    ```
@@ -745,5 +752,612 @@
     $ kubectl describe daemonsets <<name-daemonsets>>
     ```
     </details>
+1. <details>
+    <summary>To get status of the rollout</summary>
+
+    ```
+    $ kubectl rollout status deployment/myapp-deployment
+    ```
+    </details>
+1. <details>
+    <summary>To see the history and revisions</summary>
+
+    ```
+    $ kubectl rollout history deployment/myapp-deployment
+    ```
+    </details>
+1. <details>
+    <summary>To update a deployment</summary>
+
+    ```
+    $ kubectl set image deployment/myapp-deployment nginx=nginx:1.9.1
+    ```
+    </details>
+1. <details>
+    <summary>To undo a change</summary>
+
+    ```
+    $ kubectl rollout undo deployment/myapp-deployment
+    ```
+    </details>
+1. <details>
+    <summary>To get the deployment history</summary>
+
+    ```
+    $ kubectl rollout history deployment/myapp-deployment
+    ```
+    </details>
+1. <details>
+    <summary>To run a docker container</summary>
+
+    ```
+    $ docker run ubuntu
+    ```
+    </details>
+1. <details>
+    <summary>To list running containers</summary>
+
+    ```
+    $ docker ps 
+    ```
+    </details>
+1. <details>
+    <summary>To list all containers including that are stopped</summary>
+
+    ```
+    $ docker ps -a
+    ```
+    </details>
+1. <details>
+    <summary>To create config map - imperative way</summary>
+
+    ```
+    $ kubectl create configmap app-config --from-literal=APP_COLOR=blue --from-literal=APP_MODE=prod
+    ```
+
+    OR
+
+    We can use a property file to store all properties and specify that file while creating the configmap
+
+    ```
+    $ kubectl create configmap app-config --from-file=app_config.properties
+    ```
+    </details>
+1. <details>
+    <summary>To create config map - declarative way</summary>
+
+    config-map.yaml
+    ```
+    apiVersion: v1
+    kind: ConfigMap
+    metadata:
+     name: app-config
+    data:
+     APP_COLOR: blue
+     APP_MODE: prod
+    ```
+        
+    Create a config map definition file and run the 'kubectl create` command to deploy it.
+
+    ```
+    $ kubectl create -f config-map.yaml
+    ```
+    </details>
+1. <details>
+    <summary>To view configMaps</summary>
+
+    ```
+    $ kubectl get configmaps (or)
+    $ kubectl get cm
+    ```
+    </details>
+1. <details>
+    <summary>To describe configmaps</summary>
+
+    ```
+    $ kubectl describe configmaps
+    ```
+    </details>
+1. <details>
+    <summary>Inject configmap in pod</summary>
+
+     ```
+   apiVersion: v1
+   kind: Pod
+   metadata:
+     name: simple-webapp-color
+   spec:
+    containers:
+    - name: simple-webapp-color
+      image: simple-webapp-color
+      ports:
+      - containerPort: 8080
+      envFrom:
+      - configMapRef:
+          name: app-config
+   ```
+   ```
+   apiVersion: v1
+   kind: ConfigMap
+   metadata:
+     name: app-config
+   data:
+     APP_COLOR: blue
+     APP_MODE: prod
+   ```
+   ```
+   $ kubectl create -f pod-definition.yaml
+   ```
+   </details>
+1. <details>
+    <summary>To drain the node of all the workloads</summary>
+
+    ```
+    $ kubectl drain node-1
+    ```
+
+    ```
+    $kubectl drain node01 --ignore-daemonsets
+    ```
+
+   </details>
+1. <details>
+    <summary>To mark node cordoned or marked as unschedulable</summary>
+
+    ```
+    $ kubectl cordon node-1
+    ```
+   </details>
+1. <details>
+    <summary>When the node is back online after a maintenance, it is still unschedulable. You then need to uncordon it.</summary>
+
+    ```
+    $ kubectl uncordon node-1
+    ```
+
+   ![drain](../images/drain.PNG)
+  
+   </details>
+1. <details>
+   <summary>kubeadm - Upgrade master node</summary>
+   a. kubeadm has an upgrade command that helps in upgrading clusters. It shows all details of the next available version for upgrade.
+
+   ```
+   $ kubeadm upgrade plan
+   ```
+
+   b. Upgrade kubeadm from v1.11 to v1.12
+
+   ```
+   $ apt-get upgrade -y kubeadm=1.12.0-00
+   ```
+
+   c. Upgrade the cluster
+
+   ```
+   $ kubeadm upgrade apply v1.12.0
+   ```
+
+   d. Run the 'kubectl get nodes' command, you will see the older version. This is because in the output of the command it is showing the versions of kubelets on each of these nodes registered with the API Server and not the version of API Server itself
+
+   e. Upgrade 'kubelet' on the master node
+
+   ```
+   $ apt-get upgrade kubelet=1.12.0-00
+   ```   
+
+   f. Restart the kubelet
+
+   ```
+   $ systemctl restart kubelet
+   ```
+
+   g. Run 'kubectl get nodes' to verify
+
+   ```
+   $ kubectl get nodes
+   ```
+  
+   </details>
+1. <details>
+   <summary>kubeadm - Upgrade worker nodes</summary>
+
+   a. From master node, run 'kubectl drain' command to move the workloads to other nodes
+
+   ```
+   $ kubectl drain node-1
+   ```
+
+   b. Upgrade kubeadm and kubelet packages
+
+   ```
+   $ apt-get upgrade -y kubeadm=1.12.0-00
+   $ apt-get upgrade -y kubelet=1.12.0-00
+   ```
+
+   c. Update the node configuration for the new kubelet version
+
+   ```
+   $ kubeadm upgrade node config --kubelet-version v1.12.0
+   ```
+
+   d. Restart the kubelet service
+
+   ```
+   $ systemctl restart kubelet
+   ```
+
+   e. Mark the node back to schedulable
+
+   ```
+   $ kubectl uncordon node-1
+   ```
+  
+   </details>
+1. <details>
+    <summary>Backup - Resource Configs</summary>
+
+    ```
+    $ kubectl get all --all-namespaces -o yaml > all-deploy-services.yaml (only for few resource groups)
+    ```
+
+    There are many other resource groups that must be considered. There are tools like ARK or now called Velero by Heptio.
+   </details>
+1. <details>
+   <summary>Backup - ETCD</summary>
+   Instead of backing up resources as before, you may choose to backup the ETCD cluster itself.
+
+   ![be](../images/be.PNG)
+
+   a. Take a snapshot of the etcd database by using etcdctl utility snapshot save command.
+
+    ```
+    $ ETCDCTL_API=3 etcdctl snapshot save snapshot.db
+    ```
+
+    ```
+    $  ETCDCTL_API=3 etcdctl snapshot status snapshot.db
+    ```
+   </details>
+1. <details>
+    <summary>Restore - ETCD</summary>
+
+   a. To restore etcd from the backup at later in time. First stop kube-apiserver service
+
+   ```
+   $ service kube-apiserver stop
+   ```
+
+   b. Run the etcdctl snapshot restore command
+
+   c. Update the etcd service
+
+   d. Reload system configs
+
+   ```
+   $ systemctl daemon-reload
+   ```
+
+   e. Restart etcd
+
+   ```
+   $ service etcd restart
+   ```
+
+   f. Start the kube-apiserver
+
+   ```
+   $ service kube-apiserver start
+   ```
+
+   With all etcdctl commands specify the cert,key,cacert and endpoint for authentication.
+
+   $ ETCDCTL_API=3 etcdctl \
+   snapshot save /tmp/snapshot.db \
+   --endpoints=https://[127.0.0.1]:2379 \
+   --cacert=/etc/kubernetes/pki/etcd/ca.crt \
+   --cert=/etc/kubernetes/pki/etcd/etcd-server.crt \
+   --key=/etc/kubernetes/pki/etcd/etcd-server.key
+
+   ![er](../images/er.PNG)
+   </details>
+1. <details>
+    <summary>Get kubernetes cluster detail</summary>
+
+    ```
+    $ kubectl config get-clusters
+    ```
+   </details>
+1. <details>
+    <summary>Command to switch the container</summary>
+
+    ```
+    $ kubectl config use-context cluster1
+    ```
+   </details>
+1. <details>
+    <summary>To create service user account. </summary>
+
+    ```
+    $ kubectl create a serviceaccount sa1
+    ``` 
+   </details>
+1. <details>
+    <summary>To list service user account. </summary>
+
+    ```
+    $ kubectl list serviceaccount
+    ```
+   </details>
+1. <details>
+    <summary>Command to generate public and private security keys </summary>
+
+   ### Private key
+    ```
+    $ openssl genrsa -out my-bank.key 1024
+    ```
 
 
+   ### Public key
+   ```
+   $ openssl rsa -in my-bank.key -pubout > mybankkey.pem
+   ```
+
+   </details>
+1. <details>
+    <summary>Certificate Authority (CA) </summary>
+
+    ### Generate key
+
+    ```
+    $ openssl genrsa -out ca.key 2048
+    ```
+
+    ### Generate CSR
+
+    ```
+    $ openssl req -new -key ca.key -sub "/CN=KUBERNETES-CA" -out ca.csr
+    ```
+
+    ### Sign Certificates
+
+    ```
+    $ openssl x509 -req -in ca.csr -signkey ca.key -out ca.crt
+    ```
+
+   </details>
+1. <details>
+    <summary>Generating Client Certificates</summary>
+    - Admin users certificate
+    
+    ### Generate Keys
+
+    ```
+    $ openssl genrsa -out admin.key 2048
+    ```
+
+    ### Generate CSR
+
+    ```
+    $ openssl req -new -key admin.key -sub "/CN=kube-admin" -out admin.csr
+    ```
+
+    ### Sign certificate
+
+    ```
+    $ openssl x509 -req in admin.csr -CA ca.crt -CAkey ca.key -out admin.crt
+    ```
+
+    ### Certificate with admin privilages
+
+    ```
+    $ openssl req -new -key admin.key -subj "/CN=kube-admin/O=system:masters" -out admin.csr
+    ```
+
+   </details>
+1. <details>
+    <summary>Command to convert certificate to base64 </summary>
+
+    ```
+    $ cat certificate.csr | base64
+    ```
+
+    ### Remove new lines from bacs64 output
+
+    ```
+    $ cat certificate.csr | base64 -w 0
+    ```
+   </details>
+1. <details>
+    <summary>View the kube config file </summary>
+
+    ```
+    $ kubectl config view
+    ```
+   </details>
+1. <details>
+    <summary>View the kube config file with option --kubeconfig </summary>
+
+    ```
+    $ kubectl config view --kubeconfig=config.yaml
+    ```
+   </details>
+1. <details>
+    <summary>To get the kube config help</summary>
+
+    ```
+    $ kubectl config -h
+    ```
+   </details>
+1. <details>
+    <summary>To get the api version</summary>
+
+    ```
+    $ curl https://kube-master:6443/version
+    ```
+    
+    ### To list of all pods
+    ```
+    $ curl https://kube-master:6443/api/v1/pods
+    ```
+
+    ### Get all the api groups
+    ```
+    $ curl https://kube-master:6443 -k
+    ```
+
+    ### Get the list of name group in a api group
+    ```
+    $ curl https://kube-master:6443/apis -k |grep "name"
+    ```
+1. <details>
+    <summary>Create role</summary>
+
+    ```
+    $ kubectl create -f devuser-developer-binding.yaml
+    ```
+
+   ```
+   apiVersion: rbac.authorization.k8s.io/v1
+   kind: Role
+   metadata:
+      name: developer
+   rules:
+   - apiGroups: [""] # "" indicates the core API group
+      resources: ["pods"]
+      verbs: ["get", "list", "update", "delete", "create"]
+   - apiGroups: [""]
+      resources: ["ConfigMap"]
+      verbs: ["create"]
+   ```
+   ```
+   apiVersion: rbac.authorization.k8s.io/v1
+   kind: RoleBinding
+   metadata:
+      name: devuser-developer-binding
+   subjects:
+   - kind: User
+      name: dev-user # "name" is case sensitive
+      apiGroup: rbac.authorization.k8s.io
+   roleRef:
+      kind: Role
+      name: developer
+      apiGroup: rbac.authorization.k8s.io
+   ```
+   </details>
+1. <details>
+    <summary>To list the role</summary>
+
+    ```
+    $ kubectl get roles
+    ```
+   </details>
+1. <details>
+    <summary>To list the role bindings</summary>
+
+    ```
+    $ kubectl get rolebindings
+    ```
+   </details>
+1. <details>
+    <summary>To describe the role</summary>
+
+    ```
+    $ kubectl describe role developer
+    ```
+   </details>
+1. <details>
+    <summary>To describe the role binding</summary>
+
+    ```
+    $ kubectl describe rolebinding devuser-developer-binding
+    ```
+   </details>   
+1. <details>
+    <summary>A user would like to see if you have access to a particular resource in the cluster.</summary>
+
+    You can use the kubectl auth command
+      ```
+      $ kubectl auth can-i create deployments
+      $ kubectl auth can-i delete nodes
+      ```
+      ```
+      $ kubectl auth can-i create deployments --as dev-user
+      $ kubectl auth can-i create pods --as dev-user
+      ```
+      ```
+      $ kubectl auth can-i create pods --as dev-user --namespace test
+      ```
+   </details>   
+1. <details>
+    <summary>To get all resources in namespaces</summary>
+
+    ```
+    $ kubectl api-resources --namespaced=true
+    ```
+   </details>   
+1. <details>
+    <summary>To get all resources in cluster</summary>
+
+    ```
+    $ kubectl api-resources --namespaced=false
+    ```
+   </details>   
+1. <details>
+    <summary>To get all resources in namespaces</summary>
+
+    ```
+    $ kubectl api-resources --namespaced=true
+    ```
+   </details>   
+1. <details>
+    <summary>To get the list of service account</summary>
+
+    ```
+    $ kubectl get serviceaccounts
+    ```
+   </details> 
+1. <details>
+    <summary>To get the secret token used in the service accounts</summary>
+
+    ```
+    $ kubectl describe serviceaccount default
+    ```
+   </details> 
+1. <details>
+    <summary>To create a service accounts</summary>
+
+    ```
+    $ kubectl create serviceaccount dashboard-sa
+    ```
+   </details> 
+1. <details>
+    <summary>To get the token detail of a service account</summary>
+
+    ```
+    $ kubectl create serviceaccount dashboard-sa-token-kbbdm    ```
+   </details> 
+1. <details>
+    <summary>To get the network policies</summary>
+
+    ```
+    $ kubectl get networkpolicies
+    ```
+   </details> 
+1. <details>
+    <summary>To describe the network policies</summary>
+
+    ```
+    $ kubectl describe networkpolicies payroll-policies
+    ```
+   </details> 
+1. <details>
+    <summary>To get network policy information using svc</summary>
+
+    ```
+    $ kubectl get svc -n kube-system
+    ```
+   </details> 
+
+
+   

@@ -14,7 +14,7 @@
    nodeSelector:
     size: Large
   ```
-  ![ns-old](../../images/ns-old.PNG)
+  ![ns-old](../images/ns-old.PNG)
   ```
   apiVersion: v1
   kind: Pod
